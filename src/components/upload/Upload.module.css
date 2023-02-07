@@ -6,3 +6,17 @@
     background: transparent;
     border: 1px solid teal;
 }
+
+div.selection {
+    display: none;
+    position: absolute;
+    border: 1px solid blue;
+}
+
+div.visible {
+    display: block;
+}
+
+.selected {
+
+}

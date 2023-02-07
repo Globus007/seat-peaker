@@ -3,7 +3,9 @@ import classes from "./Upload.module.css";
 
 const Upload = () => {
     const [elements, setElements] = useState([]);
-    const [coords, setCoords] = useState({x:0, y:0});
+    const [coords, setCoords] = useState({x: 0, y: 0});
+    const [selection, setSelection] = useState({top: 0, left: 0, width: 0, height: 0});
+    const [activeSelection, setActiveSelection] = useState(false);
 
     const handleFileChange = (event) => {
         const svgFile = event.target.files[0];
@@ -29,30 +31,49 @@ const Upload = () => {
         }
     };
 
-    const svgClick = (event) => {
-        const element = event.target
-        if(element.nodeName !== 'ellipse') {
-            return;
+    const onMouseMoveHandler = event => {
+        if(!activeSelection)  {
+            return
         }
-        const id = element.attributes['dataid'].value;
-        elements[id].isActive = !elements[id].isActive;
-        setElements([...elements])
+
+        const x = event.pageX;
+        const y = event.pageY;
+
+        const width = Math.abs(x - coords.x);
+        const height = Math.abs(y - coords.y);
+        const top = Math.min(coords.y, y);
+        const left = Math.min(coords.x, x);
+
+        setSelection({top, left, width, height})
+    };
+
+    const onMouseDownHandler = (event) => {
+        const x = event.pageX;
+        const y = event.pageY;
+        const width = 0;
+        const height = 0;
+
+        setSelection({left: x, top: y, width, height});
+        setCoords({x, y});
+        setActiveSelection(true);
     }
-    const mouseDown = (event) => {
-        const x = event.pageX
-        const y = event.pageY
-        setCoords({x,y})
+
+    const clearSelection = () => {
+        elements.forEach(el=> el.isActive = false);
+        setElements([...elements]);
     }
-    const mouseUp = (event) => {
+
+    const onMouseUpHandler = (event) => {
+        setActiveSelection(false)
+
         const endX = event.pageX
         const endY = event.pageY
-        console.log(coords)
-        console.log({endX,endY});
+
         elements.forEach(el => {
-            const xStart = coords.x < endX ? coords.x : endX;
-            const xEnd = coords.x >= endX ? coords.x : endX;
-            const yStart = coords.y < endY ? coords.y : endY;
-            const yEnd = coords.y >= endY ? coords.y : endY;
+            const xStart = Math.min(coords.x, endX);
+            const xEnd = Math.max(coords.x, endX);
+            const yStart = Math.min(coords.y, endY);
+            const yEnd = Math.max(coords.y, endY);
 
             if (
                 xStart - el.rx <= el.cx && el.cx <= xEnd + el.rx &&
@@ -66,13 +87,32 @@ const Upload = () => {
 
     return (
         <div>
-            <svg onClick={svgClick} onMouseDown={mouseDown} onMouseUp={mouseUp} xmlns="http://www.w3.org/2000/svg" version="1.1" width="911px"
-                 height="277px" viewBox="-0.5 -0.5 911 277">
-                {elements.map((el) =>
-                    (<ellipse dataid={el.id} key={el.id} cx={el.cx} cy={el.cy} rx={el.rx} ry={el.ry} fill={el.isActive ? 'red': 'white'} stroke={el.stroke} cursor='pointer'/>))
-                }
-            </svg>
-            <input className={classes.myUpload} type="file" accept=".svg" onChange={handleFileChange} />
+            <div onMouseUp={onMouseUpHandler}
+                 onMouseMove={onMouseMoveHandler}
+                 onMouseDown={onMouseDownHandler}>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    version="1.1" width="911px"
+                    height="277px" viewBox="-0.5 -0.5 911 277">
+                    {elements.map((el) =>
+                        (<ellipse dataid={el.id} key={el.id} cx={el.cx} cy={el.cy} rx={el.rx} ry={el.ry}
+                                  fill={el.isActive ? 'red' : 'white'} stroke={el.stroke} cursor='pointer'/>))
+                    }
+                </svg>
+                <div
+                    style={
+                        {
+                            top: selection.top,
+                            left: selection.left,
+                            height: selection.height,
+                            width: selection.width,
+                        }}
+                    className={[activeSelection ? classes.visible : '', classes.selection].join(' ')}
+                ></div>
+
+            </div>
+            <input className={classes.myUpload} type="file" accept=".svg" onChange={handleFileChange}/>
+            <button onClick={clearSelection}>Clear selection</button>
         </div>
     );
 };
