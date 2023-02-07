@@ -6,3 +6,8 @@
     background: transparent;
     border: 1px solid teal;
 }
+
+div.testP {
+    position: absolute;
+    border: 1px solid blue;
+}
