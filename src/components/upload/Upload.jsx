@@ -1,11 +1,16 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import classes from "./Upload.module.css";
 
 const Upload = () => {
     const [elements, setElements] = useState([]);
-    const [coords, setCoords] = useState({x: 0, y: 0});
+    const [initialCoords, setInitialCoords] = useState({x: 0, y: 0});
     const [selection, setSelection] = useState({top: 0, left: 0, width: 0, height: 0});
-    const [activeSelection, setActiveSelection] = useState(false);
+    // const [activeSelection, setActiveSelection] = useState(false);
+
+    useEffect(()=> {
+        window.addEventListener('mousemove',onMouseMoveHandler)
+        window.addEventListener('mouseup',onMouseUpHandler)
+    },[initialCoords])
 
     const handleFileChange = (event) => {
         const svgFile = event.target.files[0];
@@ -32,17 +37,16 @@ const Upload = () => {
     };
 
     const onMouseMoveHandler = event => {
-        if(!activeSelection)  {
-            return
-        }
+        // console.log('onMouseMoveHandler')
 
         const x = event.pageX;
         const y = event.pageY;
+        console.log(`x: ${initialCoords.x}, y:${initialCoords.y}`)
 
-        const width = Math.abs(x - coords.x);
-        const height = Math.abs(y - coords.y);
-        const top = Math.min(coords.y, y);
-        const left = Math.min(coords.x, x);
+        const width = Math.abs(x - initialCoords.x);
+        const height = Math.abs(y - initialCoords.y);
+        const top = Math.min(initialCoords.y, y);
+        const left = Math.min(initialCoords.x, x);
 
         setSelection({top, left, width, height})
     };
@@ -50,12 +54,14 @@ const Upload = () => {
     const onMouseDownHandler = (event) => {
         const x = event.pageX;
         const y = event.pageY;
+        // console.log(`x: ${x}, y:${y}`)
+
         const width = 0;
         const height = 0;
 
         setSelection({left: x, top: y, width, height});
-        setCoords({x, y});
-        setActiveSelection(true);
+        setInitialCoords({x, y});
+        // setActiveSelection(true);
     }
 
     const clearSelection = () => {
@@ -64,33 +70,44 @@ const Upload = () => {
     }
 
     const onMouseUpHandler = (event) => {
-        setActiveSelection(false)
+        // console.log('onMouseUpHandler')
+        // setActiveSelection(false)
 
         const endX = event.pageX
         const endY = event.pageY
 
         elements.forEach(el => {
-            const xStart = Math.min(coords.x, endX);
-            const xEnd = Math.max(coords.x, endX);
-            const yStart = Math.min(coords.y, endY);
-            const yEnd = Math.max(coords.y, endY);
+            const xStart = Math.min(initialCoords.x, endX);
+            const xEnd = Math.max(initialCoords.x, endX);
+            const yStart = Math.min(initialCoords.y, endY);
+            const yEnd = Math.max(initialCoords.y, endY);
 
             if (
                 xStart - el.rx <= el.cx && el.cx <= xEnd + el.rx &&
                 yStart - el.ry <= el.cy && el.cy <= yEnd + el.ry
             ) {
-                el.isActive = !el.isActive;
+                el.isActive = true;
             }
         })
         setElements([...elements]);
+        setSelection({top: 0, left: 0, width: 0, height: 0});
+
+        window.removeEventListener('mousemove',onMouseMoveHandler)
+        window.removeEventListener('mouseup',onMouseUpHandler)
+    }
+
+    const onClickHandler = (event) => {
+        console.log('onClickHandler')
     }
 
     return (
         <div>
-            <div onMouseUp={onMouseUpHandler}
-                 onMouseMove={onMouseMoveHandler}
+            <div onDragStart={()=>false}
+                 // onMouseUp={onMouseUpHandler}
+                 // onMouseMove={onMouseMoveHandler}
                  onMouseDown={onMouseDownHandler}>
                 <svg
+                    onClick={onClickHandler}
                     xmlns="http://www.w3.org/2000/svg"
                     version="1.1" width="911px"
                     height="277px" viewBox="-0.5 -0.5 911 277">
@@ -107,7 +124,8 @@ const Upload = () => {
                             height: selection.height,
                             width: selection.width,
                         }}
-                    className={[activeSelection ? classes.visible : '', classes.selection].join(' ')}
+                    // className={[activeSelection ? classes.visible : '', classes.selection].join(' ')}
+                    className={[classes.visible , classes.selection].join(' ')}
                 ></div>
 
             </div>
