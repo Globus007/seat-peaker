@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import classes from "./Upload.module.css";
 
 const Upload = () => {
@@ -7,10 +7,7 @@ const Upload = () => {
     const [selection, setSelection] = useState({top: 0, left: 0, width: 0, height: 0});
     // const [activeSelection, setActiveSelection] = useState(false);
 
-    useEffect(()=> {
-        window.addEventListener('mousemove',onMouseMoveHandler)
-        window.addEventListener('mouseup',onMouseUpHandler)
-    },[initialCoords])
+
 
     const handleFileChange = (event) => {
         const svgFile = event.target.files[0];
@@ -36,7 +33,11 @@ const Upload = () => {
         }
     };
 
-    const onMouseMoveHandler = event => {
+    const onMouseMoveHandler = useCallback( event => {
+
+        if(!event.buttons) {
+            return
+        }
         // console.log('onMouseMoveHandler')
 
         const x = event.pageX;
@@ -49,7 +50,7 @@ const Upload = () => {
         const left = Math.min(initialCoords.x, x);
 
         setSelection({top, left, width, height})
-    };
+    },[initialCoords.x, initialCoords.y]);
 
     const onMouseDownHandler = (event) => {
         const x = event.pageX;
@@ -69,7 +70,7 @@ const Upload = () => {
         setElements([...elements]);
     }
 
-    const onMouseUpHandler = (event) => {
+    const onMouseUpHandler = useCallback((event) => {
         // console.log('onMouseUpHandler')
         // setActiveSelection(false)
 
@@ -92,20 +93,33 @@ const Upload = () => {
         setElements([...elements]);
         setSelection({top: 0, left: 0, width: 0, height: 0});
 
-        window.removeEventListener('mousemove',onMouseMoveHandler)
-        window.removeEventListener('mouseup',onMouseUpHandler)
-    }
+        // window.removeEventListener('mousemove',onMouseMoveHandler)
+        // window.removeEventListener('mouseup',onMouseUpHandler)
+    }, [elements, initialCoords.x, initialCoords.y])
 
     const onClickHandler = (event) => {
         console.log('onClickHandler')
     }
+
+    useEffect(()=> {
+        window.addEventListener('mousemove',onMouseMoveHandler)
+        window.addEventListener('mouseup',onMouseUpHandler)
+        window.addEventListener('mousedown',onMouseDownHandler)
+        return () => {
+            window.removeEventListener('mousemove',onMouseMoveHandler)
+            window.removeEventListener('mouseup',onMouseUpHandler)
+            window.removeEventListener('mousedown',onMouseDownHandler)
+
+        }
+    },[onMouseMoveHandler, onMouseUpHandler])
 
     return (
         <div>
             <div onDragStart={()=>false}
                  // onMouseUp={onMouseUpHandler}
                  // onMouseMove={onMouseMoveHandler}
-                 onMouseDown={onMouseDownHandler}>
+                 // onMouseDown={onMouseDownHandler}
+            >
                 <svg
                     onClick={onClickHandler}
                     xmlns="http://www.w3.org/2000/svg"
